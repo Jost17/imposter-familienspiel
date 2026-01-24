@@ -1,0 +1,108 @@
+{
+  "project": {
+    "name": "imposter-familienspiel",
+    "description": "Familien-Ratespiel App wo ein Spieler das geheime Wort nicht kennt",
+    "created": "2026-01-24T19:30:00Z",
+    "last_updated": "2026-01-24T19:30:00Z"
+  },
+  "features": [
+    {
+      "id": "core-gameplay",
+      "name": "Core Gameplay",
+      "description": "Grundlegende Spiellogik: Spieler eingeben, Wort auswählen, Imposter zuweisen",
+      "status": "passing",
+      "priority": 1,
+      "dependencies": [],
+      "notes": "Alpha-Version läuft"
+    },
+    {
+      "id": "player-management",
+      "name": "Player Management",
+      "description": "Spieler hinzufügen, entfernen, speichern",
+      "status": "passing",
+      "priority": 1,
+      "dependencies": [],
+      "notes": ""
+    },
+    {
+      "id": "word-lists",
+      "name": "Vordefinierte Wortlisten",
+      "description": "Kategorien mit Wörtern für verschiedene Altersgruppen",
+      "status": "passing",
+      "priority": 1,
+      "dependencies": [],
+      "notes": ""
+    },
+    {
+      "id": "reveal-screen",
+      "name": "Reveal Screen",
+      "description": "Jeder Spieler sieht seine Rolle (Wort oder Imposter)",
+      "status": "passing",
+      "priority": 1,
+      "dependencies": ["core-gameplay"],
+      "notes": ""
+    },
+    {
+      "id": "discussion-screen",
+      "name": "Discussion Screen",
+      "description": "Timer und Übersicht für die Diskussionsphase",
+      "status": "passing",
+      "priority": 2,
+      "dependencies": ["reveal-screen"],
+      "notes": ""
+    },
+    {
+      "id": "result-screen",
+      "name": "Result Screen",
+      "description": "Auflösung: Wer war Imposter, was war das Wort",
+      "status": "passing",
+      "priority": 2,
+      "dependencies": ["discussion-screen"],
+      "notes": ""
+    },
+    {
+      "id": "custom-word-lists",
+      "name": "Eigene Wortlisten",
+      "description": "Benutzer können eigene Kategorien und Wörter erstellen",
+      "status": "passing",
+      "priority": 3,
+      "dependencies": ["word-lists"],
+      "notes": ""
+    },
+    {
+      "id": "saved-players",
+      "name": "Gespeicherte Spieler",
+      "description": "Spielernamen für schnellen Zugriff speichern",
+      "status": "passing",
+      "priority": 3,
+      "dependencies": ["player-management"],
+      "notes": ""
+    },
+    {
+      "id": "random-starter",
+      "name": "Zufälliger Startspieler",
+      "description": "Nach Reveal zufällig bestimmen wer die Diskussion beginnt",
+      "status": "pending",
+      "priority": 4,
+      "dependencies": ["reveal-screen"],
+      "notes": "GitHub Issue #1"
+    },
+    {
+      "id": "fair-imposter-distribution",
+      "name": "Faire Imposter-Verteilung",
+      "description": "Gewichtete Zufallsauswahl damit nicht immer dieselben Imposter sind",
+      "status": "pending",
+      "priority": 4,
+      "dependencies": ["core-gameplay"],
+      "notes": "GitHub Issue #2"
+    }
+  ],
+  "stats": {
+    "total": 10,
+    "pending": 2,
+    "in_progress": 0,
+    "passing": 8,
+    "failing": 0,
+    "blocked": 0
+  }
+}

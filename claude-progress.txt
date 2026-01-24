@@ -1,0 +1,29 @@
+================================================================================
+PROJECT: imposter-familienspiel
+INITIALIZED: 2026-01-24
+================================================================================
+
+--- SESSION: 2026-01-24 19:00 ---
+Action: Project setup and iOS Simulator compatibility fix
+Work Done:
+- iOS-Runtime für Simulator installiert
+- SafeAreaProvider in _layout.tsx hinzugefügt (Fix für weißen Bildschirm)
+- Package-Versionen gefixt (react-native-screens, gesture-handler)
+- Alpha-Version läuft erfolgreich im iOS Simulator
+
+GitHub Issues erstellt:
+- #1: Zufälliger Startspieler nach Rollenverteilung
+- #2: Faire Imposter-Verteilung über mehrere Runden
+
+Commits:
+- 09be047: Fix iOS Simulator compatibility
+
+Status: 8/10 Features passing
+Next: Issue #1 oder #2 implementieren
+
+Empfohlene Skills für nächste Session:
+- algorithm: Für faire Imposter-Verteilung (gewichteter Zufall)
+- aesthetic: UI-Polish wenn gewünscht
+- challenge: Code-Review vor Release
+
+================================================================================
