@@ -5,7 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore, getRecommendedImposterCount, getAllCategories } from '../src/store/gameStore';
 import { defaultCategories, getDifficultyEmoji } from '../src/data/categories';
-import { Category } from '../src/types';
+import { Category, Difficulty } from '../src/types';
 
 export default function SetupScreen() {
   const router = useRouter();
@@ -39,7 +39,7 @@ export default function SetupScreen() {
     router.push('/reveal');
   };
 
-  const getCategoryDifficulty = (category: Category): string => {
+  const getCategoryDifficulty = (category: Category): Difficulty => {
     const difficulties = category.words.map((w) => w.difficulty);
     const hardCount = difficulties.filter((d) => d === 'hard').length;
     const mediumCount = difficulties.filter((d) => d === 'medium').length;
