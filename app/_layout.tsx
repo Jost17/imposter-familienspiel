@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
 import { useColorScheme } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useGameStore } from '../src/store/gameStore';
 
 const customLightTheme = {
@@ -36,8 +37,9 @@ export default function RootLayout() {
   }, [loadFromStorage]);
 
   return (
-    <PaperProvider theme={theme}>
-      <Stack
+    <SafeAreaProvider>
+      <PaperProvider theme={theme}>
+        <Stack
         screenOptions={{
           headerStyle: {
             backgroundColor: theme.colors.primary,
@@ -99,7 +101,8 @@ export default function RootLayout() {
             title: 'Gespeicherte Spieler',
           }}
         />
-      </Stack>
-    </PaperProvider>
+        </Stack>
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }
