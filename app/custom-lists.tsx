@@ -179,11 +179,11 @@ export default function CustomListsScreen() {
           onDismiss={closeModal}
           contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.background }]}
         >
-          <ScrollView>
-            <Text variant="titleLarge" style={styles.modalTitle}>
-              {editingId ? 'Liste bearbeiten' : 'Neue Wortliste'}
-            </Text>
+          <Text variant="titleLarge" style={styles.modalTitle}>
+            {editingId ? 'Liste bearbeiten' : 'Neue Wortliste'}
+          </Text>
 
+          <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator>
             <TextInput
               mode="outlined"
               label="Name der Liste"
@@ -244,21 +244,22 @@ export default function CustomListsScreen() {
                 Wort hinzufügen
               </Button>
             )}
-
-            <View style={styles.modalActions}>
-              <Button mode="outlined" onPress={closeModal} style={styles.modalButton}>
-                Abbrechen
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleSave}
-                disabled={!canSave}
-                style={styles.modalButton}
-              >
-                Speichern
-              </Button>
-            </View>
           </ScrollView>
+
+          {/* Sticky Footer - AUSSERHALB des ScrollViews */}
+          <View style={styles.modalFooter}>
+            <Button mode="outlined" onPress={closeModal} style={styles.modalButton}>
+              Abbrechen
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleSave}
+              disabled={!canSave}
+              style={styles.modalButton}
+            >
+              Speichern
+            </Button>
+          </View>
         </Modal>
       </Portal>
     </SafeAreaView>
@@ -325,12 +326,17 @@ const styles = StyleSheet.create({
   },
   modal: {
     margin: 20,
-    padding: 20,
     borderRadius: 12,
     maxHeight: '85%',
+    overflow: 'hidden',
   },
   modalTitle: {
-    marginBottom: 16,
+    padding: 20,
+    paddingBottom: 16,
+  },
+  modalScrollView: {
+    flexShrink: 1,
+    paddingHorizontal: 20,
   },
   input: {
     marginBottom: 16,
@@ -360,12 +366,16 @@ const styles = StyleSheet.create({
   },
   addWordButton: {
     marginTop: 8,
+    marginBottom: 8,
   },
-  modalActions: {
+  modalFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 12,
-    marginTop: 24,
+    padding: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
   },
   modalButton: {
     minWidth: 100,
