@@ -85,7 +85,7 @@ export default function RevealScreen() {
   const total = currentGame.players.length;
 
   return (
-    <View style={[styles.container, currentPlayer.isImposter && revealState === 'revealing' ? styles.containerImposter : null]}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
           {/* Progress Bar */}
@@ -182,9 +182,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#2C3E50',
-  },
-  containerImposter: {
-    backgroundColor: '#E74C3C',
   },
   safeArea: {
     flex: 1,
