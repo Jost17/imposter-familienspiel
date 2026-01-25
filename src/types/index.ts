@@ -18,6 +18,7 @@ export interface Player {
   name: string;
   isImposter: boolean;
   hasSeenRole: boolean;
+  avatarIndex: number;
 }
 
 export interface GameSession {

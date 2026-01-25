@@ -43,12 +43,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const selectedWord = getRandomWord(category);
 
-    // Create players
-    const players: Player[] = playerNames.map((name) => ({
+    // Create players with avatarIndex preserved before shuffling
+    const players: Player[] = playerNames.map((name, index) => ({
       id: generateId(),
       name,
       isImposter: false,
       hasSeenRole: false,
+      avatarIndex: index,
     }));
 
     // Randomly assign imposters

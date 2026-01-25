@@ -1,24 +1,51 @@
-import { View, StyleSheet } from 'react-native';
-import { Button, Card, Text, useTheme, Chip } from 'react-native-paper';
+import { useEffect, useRef } from 'react';
+import { View, StyleSheet, Pressable, Animated } from 'react-native';
+import { Text, Surface } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore } from '../src/store/gameStore';
+import { PlayerAvatar } from '../components/PlayerAvatar';
+
+const CONFETTI_EMOJIS = ['🎉', '🎊', '✨', '⭐', '🌟', '💫'];
 
 export default function ResultScreen() {
   const router = useRouter();
-  const theme = useTheme();
 
   const currentGame = useGameStore((state) => state.currentGame);
   const endGame = useGameStore((state) => state.endGame);
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.5)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Dramatic reveal animation
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 5, useNativeDriver: true }),
+      ]),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, { toValue: -10, duration: 400, useNativeDriver: true }),
+          Animated.timing(bounceAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+        ])
+      ),
+    ]).start();
+  }, [fadeAnim, scaleAnim, bounceAnim]);
+
   if (!currentGame) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.center}>
-          <Text>Kein aktives Spiel</Text>
-          <Button onPress={() => router.replace('/')}>Zurück zum Start</Button>
-        </View>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.center}>
+            <Text style={styles.errorText}>Kein aktives Spiel</Text>
+            <Pressable onPress={() => router.replace('/')} style={styles.backButton}>
+              <Text style={styles.backButtonText}>🏠 Zurück</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
@@ -26,7 +53,6 @@ export default function ResultScreen() {
   const innocents = currentGame.players.filter((p) => !p.isImposter);
 
   const handlePlayAgain = () => {
-    // Keep same players, go to setup
     const playerNames = currentGame.players.map((p) => p.name);
     endGame();
     router.replace({
@@ -41,169 +67,295 @@ export default function ResultScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        {/* Reveal Header */}
-        <View style={styles.header}>
-          <Text variant="displaySmall" style={styles.emoji}>
-            🎭
-          </Text>
-          <Text variant="headlineMedium" style={styles.title}>
-            Auflösung
-          </Text>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {/* Confetti Header */}
+        <View style={styles.confettiRow}>
+          {CONFETTI_EMOJIS.map((emoji, i) => (
+            <Text key={i} style={styles.confettiEmoji}>{emoji}</Text>
+          ))}
         </View>
 
-        {/* Imposters Card */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.errorContainer }]}>
-          <Card.Content>
-            <Text
-              variant="titleMedium"
-              style={[styles.cardTitle, { color: theme.colors.onErrorContainer }]}
-            >
-              🕵️ {imposters.length === 1 ? 'Der Imposter war:' : 'Die Imposter waren:'}
-            </Text>
-            <View style={styles.namesList}>
-              {imposters.map((player) => (
-                <Chip
-                  key={player.id}
-                  style={[styles.nameChip, { backgroundColor: theme.colors.error }]}
-                  textStyle={{ color: theme.colors.onError }}
-                >
-                  {player.name}
-                </Chip>
-              ))}
-            </View>
-          </Card.Content>
-        </Card>
+        <Animated.View style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }]
+          }
+        ]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Animated.Text style={[
+              styles.headerEmoji,
+              { transform: [{ translateY: bounceAnim }] }
+            ]}>
+              🎭
+            </Animated.Text>
+            <Text style={styles.headerTitle}>Auflösung!</Text>
+          </View>
 
-        {/* Word Card */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.primaryContainer }]}>
-          <Card.Content>
-            <Text
-              variant="titleMedium"
-              style={[styles.cardTitle, { color: theme.colors.onPrimaryContainer }]}
-            >
+          {/* Imposter Reveal Card */}
+          <Surface style={styles.imposterCard} elevation={4}>
+            <View style={styles.imposterHeader}>
+              <Text style={styles.imposterEmoji}>🕵️</Text>
+              <Text style={styles.imposterLabel}>
+                {imposters.length === 1 ? 'Der Imposter war...' : 'Die Imposter waren...'}
+              </Text>
+            </View>
+            <View style={styles.imposterNames}>
+              {imposters.map((player) => {
+                const playerIndex = currentGame.players.findIndex(p => p.id === player.id);
+                return (
+                  <View key={player.id} style={styles.imposterNameBadge}>
+                    <PlayerAvatar playerIndex={playerIndex} size={32} />
+                    <Text style={styles.imposterName}>{player.name}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </Surface>
+
+          {/* Secret Word Card */}
+          <Surface style={styles.wordCard} elevation={3}>
+            <Text style={styles.wordLabel}>
               {currentGame.category.icon} Das geheime Wort war:
             </Text>
-            <Text
-              variant="headlineLarge"
-              style={[styles.word, { color: theme.colors.onPrimaryContainer }]}
-            >
-              {currentGame.selectedWord}
-            </Text>
-            <Text
-              variant="bodyMedium"
-              style={[styles.categoryName, { color: theme.colors.onPrimaryContainer }]}
-            >
+            <Text style={styles.secretWord}>{currentGame.selectedWord}</Text>
+            <Text style={styles.categoryName}>
               Kategorie: {currentGame.category.name}
             </Text>
-          </Card.Content>
-        </Card>
+          </Surface>
 
-        {/* Innocents */}
-        <Card style={styles.innocentsCard}>
-          <Card.Content>
-            <Text variant="titleSmall" style={styles.innocentsTitle}>
-              ✓ Unschuldig:
-            </Text>
-            <View style={styles.namesList}>
-              {innocents.map((player) => (
-                <Chip key={player.id} style={styles.innocentChip}>
-                  {player.name}
-                </Chip>
-              ))}
+          {/* Innocents */}
+          <View style={styles.innocentsSection}>
+            <Text style={styles.innocentsTitle}>✅ Unschuldig:</Text>
+            <View style={styles.innocentsGrid}>
+              {innocents.map((player) => {
+                const playerIndex = currentGame.players.findIndex(p => p.id === player.id);
+                return (
+                  <View key={player.id} style={styles.innocentChip}>
+                    <PlayerAvatar playerIndex={playerIndex} size={24} />
+                    <Text style={styles.innocentName}>{player.name}</Text>
+                  </View>
+                );
+              })}
             </View>
-          </Card.Content>
-        </Card>
+          </View>
+        </Animated.View>
 
         {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <Button
-            mode="contained"
+        <View style={styles.footer}>
+          <Pressable
             onPress={handlePlayAgain}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
+            style={({ pressed }) => [
+              styles.playAgainButton,
+              pressed && styles.buttonPressed,
+            ]}
           >
-            🔄 Nochmal spielen
-          </Button>
-          <Button
-            mode="outlined"
+            <Text style={styles.playAgainText}>🔄 Nochmal spielen!</Text>
+          </Pressable>
+          <Pressable
             onPress={handleNewGame}
-            style={styles.button}
+            style={({ pressed }) => [
+              styles.newGameButton,
+              pressed && styles.buttonPressed,
+            ]}
           >
-            🏠 Neues Spiel
-          </Button>
+            <Text style={styles.newGameText}>🏠 Neue Spieler</Text>
+          </Pressable>
         </View>
-      </View>
-    </SafeAreaView>
+
+        {/* Bottom Confetti */}
+        <View style={styles.confettiRow}>
+          {CONFETTI_EMOJIS.slice().reverse().map((emoji, i) => (
+            <Text key={i} style={styles.confettiEmoji}>{emoji}</Text>
+          ))}
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#27AE60',
   },
-  content: {
+  safeArea: {
     flex: 1,
-    padding: 20,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 20,
-  },
-  emoji: {
-    marginBottom: 8,
-  },
-  title: {
-    fontWeight: 'bold',
-  },
-  card: {
+  errorText: {
+    color: '#fff',
+    fontSize: 18,
     marginBottom: 16,
   },
-  cardTitle: {
-    marginBottom: 12,
+  backButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
-  namesList: {
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confettiRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+  },
+  confettiEmoji: {
+    fontSize: 28,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  headerEmoji: {
+    fontSize: 60,
+    marginBottom: 4,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#fff',
+  },
+  imposterCard: {
+    backgroundColor: '#E74C3C',
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  imposterHeader: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  imposterEmoji: {
+    fontSize: 50,
+    marginBottom: 4,
+  },
+  imposterLabel: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
+  },
+  imposterNames: {
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    padding: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  imposterNameBadge: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  imposterName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#E74C3C',
+  },
+  wordCard: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 18,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  wordLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  secretWord: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#2C3E50',
+    marginBottom: 8,
+  },
+  categoryName: {
+    fontSize: 13,
+    color: '#888',
+  },
+  innocentsSection: {
+    marginBottom: 16,
+  },
+  innocentsTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 10,
+  },
+  innocentsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  nameChip: {
-    marginRight: 4,
-  },
   innocentChip: {
-    marginRight: 4,
-  },
-  word: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  categoryName: {
-    textAlign: 'center',
-    opacity: 0.8,
-  },
-  innocentsCard: {
-    marginBottom: 24,
-  },
-  innocentsTitle: {
-    marginBottom: 8,
-    opacity: 0.7,
-  },
-  buttonContainer: {
-    gap: 12,
-    marginTop: 'auto',
-  },
-  button: {
-    borderRadius: 12,
-  },
-  buttonContent: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
     paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  innocentName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  footer: {
+    padding: 16,
+    gap: 12,
+  },
+  playAgainButton: {
+    backgroundColor: '#FFE66D',
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  playAgainText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#333',
+  },
+  newGameButton: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  newGameText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  buttonPressed: {
+    transform: [{ scale: 0.98 }],
   },
 });

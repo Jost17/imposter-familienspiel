@@ -1,15 +1,15 @@
-import { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
-import { Button, Card, Text, useTheme } from 'react-native-paper';
+import { useState, useRef, useEffect } from 'react';
+import { View, StyleSheet, Pressable, Animated } from 'react-native';
+import { Text, Surface } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore } from '../src/store/gameStore';
+import { PlayerAvatar, getPlayerAvatarName } from '../components/PlayerAvatar';
 
-type RevealState = 'waiting' | 'revealing' | 'confirmed';
+type RevealState = 'waiting' | 'revealing';
 
 export default function RevealScreen() {
   const router = useRouter();
-  const theme = useTheme();
 
   const currentGame = useGameStore((state) => state.currentGame);
   const markPlayerAsSeen = useGameStore((state) => state.markPlayerAsSeen);
@@ -18,20 +18,52 @@ export default function RevealScreen() {
 
   const [revealState, setRevealState] = useState<RevealState>('waiting');
 
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    // Pulse animation for tap area
+    if (revealState === 'waiting') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.05, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        ])
+      ).start();
+    }
+  }, [revealState, pulseAnim]);
+
+  useEffect(() => {
+    // Reveal animation
+    if (revealState === 'revealing') {
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
+      ]).start();
+    } else {
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.8);
+    }
+  }, [revealState, fadeAnim, scaleAnim]);
+
   if (!currentGame) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.center}>
-          <Text>Kein aktives Spiel</Text>
-          <Button onPress={() => router.replace('/')}>Zurück zum Start</Button>
-        </View>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.center}>
+            <Text style={styles.errorText}>Kein aktives Spiel</Text>
+            <Pressable onPress={() => router.replace('/')} style={styles.backButton}>
+              <Text style={styles.backButtonText}>🏠 Zurück</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
   const currentPlayer = currentGame.players[currentGame.currentPlayerIndex];
   const isLastPlayer = currentGame.currentPlayerIndex === currentGame.players.length - 1;
-  const allPlayersSeen = currentGame.players.every((p) => p.hasSeenRole);
 
   const handleTapToReveal = () => {
     setRevealState('revealing');
@@ -49,108 +81,112 @@ export default function RevealScreen() {
     }
   };
 
-  const progressText = `${currentGame.currentPlayerIndex + 1} / ${currentGame.players.length}`;
+  const progress = currentGame.currentPlayerIndex + 1;
+  const total = currentGame.players.length;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        {/* Progress */}
-        <View style={styles.progress}>
-          <Text variant="bodyMedium" style={styles.progressText}>
-            {progressText}
-          </Text>
-        </View>
-
-        {revealState === 'waiting' && (
-          <>
-            <View style={styles.center}>
-              <Text variant="headlineMedium" style={styles.playerName}>
-                {currentPlayer.name}
-              </Text>
-              <Text variant="bodyLarge" style={styles.instruction}>
-                nimm das Handy
-              </Text>
+    <View style={[styles.container, currentPlayer.isImposter && revealState === 'revealing' ? styles.containerImposter : null]}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${(progress / total) * 100}%` }]} />
             </View>
-
-            <Pressable
-              onPress={handleTapToReveal}
-              style={[styles.tapArea, { backgroundColor: theme.colors.primaryContainer }]}
-            >
-              <Text variant="titleLarge" style={{ color: theme.colors.onPrimaryContainer }}>
-                👆 Tippe zum Aufdecken
-              </Text>
-            </Pressable>
-          </>
-        )}
-
-        {revealState === 'revealing' && (
-          <View style={styles.revealContent}>
-            {currentPlayer.isImposter ? (
-              <Card style={[styles.roleCard, { backgroundColor: theme.colors.errorContainer }]}>
-                <Card.Content style={styles.roleCardContent}>
-                  <Text variant="displaySmall" style={styles.roleEmoji}>
-                    🕵️
-                  </Text>
-                  <Text
-                    variant="headlineMedium"
-                    style={[styles.roleText, { color: theme.colors.onErrorContainer }]}
-                  >
-                    Du bist der Imposter!
-                  </Text>
-                  <Text
-                    variant="bodyLarge"
-                    style={[styles.roleHint, { color: theme.colors.onErrorContainer }]}
-                  >
-                    Du kennst das Wort nicht.{'\n'}
-                    Versuche unentdeckt zu bleiben!
-                  </Text>
-                </Card.Content>
-              </Card>
-            ) : (
-              <Card style={[styles.roleCard, { backgroundColor: theme.colors.primaryContainer }]}>
-                <Card.Content style={styles.roleCardContent}>
-                  <Text variant="displaySmall" style={styles.roleEmoji}>
-                    {currentGame.category.icon}
-                  </Text>
-                  <Text
-                    variant="bodyMedium"
-                    style={[styles.categoryLabel, { color: theme.colors.onPrimaryContainer }]}
-                  >
-                    Das geheime Wort ist:
-                  </Text>
-                  <Text
-                    variant="displaySmall"
-                    style={[styles.wordText, { color: theme.colors.onPrimaryContainer }]}
-                  >
-                    {currentGame.selectedWord}
-                  </Text>
-                  <Text
-                    variant="bodyMedium"
-                    style={[styles.roleHint, { color: theme.colors.onPrimaryContainer }]}
-                  >
-                    Hilf den anderen, den Imposter zu finden!
-                  </Text>
-                </Card.Content>
-              </Card>
-            )}
-
-            <Button
-              mode="contained"
-              onPress={handleConfirm}
-              style={styles.confirmButton}
-              contentStyle={styles.confirmButtonContent}
-            >
-              ✓ Verstanden, weiter
-            </Button>
+            <Text style={styles.progressText}>{progress} von {total}</Text>
           </View>
-        )}
-      </View>
-    </SafeAreaView>
+
+          {revealState === 'waiting' && (
+            <View style={styles.waitingContent}>
+              <View style={styles.playerCallout}>
+                <PlayerAvatar playerIndex={currentPlayer.avatarIndex} size={80} style={styles.calloutAvatar} />
+                <Text style={styles.playerName}>{currentPlayer.name}</Text>
+                <Text style={styles.instruction}>Nimm das Handy!</Text>
+              </View>
+
+              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <Pressable onPress={handleTapToReveal} style={styles.tapArea}>
+                  <Text style={styles.tapEmoji}>👆</Text>
+                  <Text style={styles.tapText}>Tippe hier!</Text>
+                  <Text style={styles.tapHint}>um deine Rolle zu sehen</Text>
+                </Pressable>
+              </Animated.View>
+
+              <View style={styles.privacyHint}>
+                <Text style={styles.privacyText}>🤫 Niemand darf mitlesen!</Text>
+              </View>
+            </View>
+          )}
+
+          {revealState === 'revealing' && (
+            <Animated.View style={[
+              styles.revealContent,
+              { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }
+            ]}>
+              {currentPlayer.isImposter ? (
+                <Surface style={styles.imposterCard} elevation={4}>
+                  <View style={styles.imposterHeader}>
+                    <PlayerAvatar playerIndex={currentPlayer.avatarIndex} size={70} style={styles.revealAvatar} />
+                    <Text style={styles.imposterTitle}>DU BIST DER</Text>
+                    <Text style={styles.imposterWord}>IMPOSTER!</Text>
+                  </View>
+                  <View style={styles.imposterInfo}>
+                    <Text style={styles.imposterHint}>
+                      😱 Du kennst das geheime Wort NICHT!
+                    </Text>
+                    <Text style={styles.imposterTip}>
+                      💡 Tu so als würdest du es kennen...
+                    </Text>
+                  </View>
+                </Surface>
+              ) : (
+                <Surface style={styles.innocentCard} elevation={4}>
+                  <View style={styles.innocentHeader}>
+                    <PlayerAvatar playerIndex={currentPlayer.avatarIndex} size={60} style={styles.revealAvatar} />
+                    <Text style={styles.innocentLabel}>Das geheime Wort ist:</Text>
+                  </View>
+                  <View style={styles.wordContainer}>
+                    <Text style={styles.secretWord}>{currentGame.selectedWord}</Text>
+                  </View>
+                  <View style={styles.innocentInfo}>
+                    <Text style={styles.innocentHint}>
+                      🔍 Finde den Imposter!
+                    </Text>
+                    <Text style={styles.innocentTip}>
+                      💡 Gib Hinweise, aber nicht zu offensichtlich!
+                    </Text>
+                  </View>
+                </Surface>
+              )}
+
+              <Pressable
+                onPress={handleConfirm}
+                style={({ pressed }) => [
+                  styles.confirmButton,
+                  pressed && styles.confirmButtonPressed,
+                ]}
+              >
+                <Text style={styles.confirmText}>
+                  {isLastPlayer ? '✅ Alle bereit - Los!' : '👍 Verstanden!'}
+                </Text>
+              </Pressable>
+            </Animated.View>
+          )}
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#2C3E50',
+  },
+  containerImposter: {
+    backgroundColor: '#E74C3C',
+  },
+  safeArea: {
     flex: 1,
   },
   content: {
@@ -162,62 +198,206 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  progress: {
+  errorText: {
+    color: '#fff',
+    fontSize: 18,
+    marginBottom: 16,
+  },
+  backButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  progressContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+  },
+  progressBar: {
+    width: '100%',
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#FFE66D',
+    borderRadius: 4,
   },
   progressText: {
-    opacity: 0.6,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  waitingContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingVertical: 20,
+  },
+  playerCallout: {
+    alignItems: 'center',
+  },
+  calloutAvatar: {
+    marginBottom: 12,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
   playerName: {
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#fff',
+    marginBottom: 4,
   },
   instruction: {
-    opacity: 0.7,
+    fontSize: 20,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
   },
   tapArea: {
-    padding: 40,
-    borderRadius: 20,
+    backgroundColor: '#FFE66D',
+    borderRadius: 100,
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 40,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  tapEmoji: {
+    fontSize: 50,
+    marginBottom: 8,
+  },
+  tapText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#333',
+  },
+  tapHint: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  privacyHint: {
+    alignItems: 'center',
+  },
+  privacyText: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '500',
   },
   revealContent: {
     flex: 1,
     justifyContent: 'center',
   },
-  roleCard: {
-    marginBottom: 24,
+  imposterCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginBottom: 20,
   },
-  roleCardContent: {
+  imposterHeader: {
+    backgroundColor: '#E74C3C',
+    padding: 24,
     alignItems: 'center',
-    paddingVertical: 32,
   },
-  roleEmoji: {
-    marginBottom: 16,
-  },
-  roleText: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  categoryLabel: {
-    opacity: 0.8,
+  revealAvatar: {
     marginBottom: 8,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.6)',
   },
-  wordText: {
-    fontWeight: 'bold',
-    marginBottom: 16,
+  imposterTitle: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
   },
-  roleHint: {
+  imposterWord: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#fff',
+  },
+  imposterInfo: {
+    padding: 20,
+    gap: 12,
+  },
+  imposterHint: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
     textAlign: 'center',
-    opacity: 0.8,
-    lineHeight: 22,
+  },
+  imposterTip: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+  },
+  innocentCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  innocentHeader: {
+    backgroundColor: '#27AE60',
+    padding: 20,
+    alignItems: 'center',
+  },
+  innocentLabel: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
+  },
+  wordContainer: {
+    padding: 24,
+    backgroundColor: '#F8F9FA',
+    alignItems: 'center',
+  },
+  secretWord: {
+    fontSize: 38,
+    fontWeight: '900',
+    color: '#2C3E50',
+  },
+  innocentInfo: {
+    padding: 20,
+    gap: 8,
+  },
+  innocentHint: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  innocentTip: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
   confirmButton: {
-    borderRadius: 12,
+    backgroundColor: '#FFE66D',
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  confirmButtonContent: {
-    paddingVertical: 8,
+  confirmButtonPressed: {
+    transform: [{ scale: 0.98 }],
+  },
+  confirmText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#333',
   },
 });

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Button, Card, Text, useTheme, RadioButton, Chip, Divider } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { Text, Surface } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore, getRecommendedImposterCount, getAllCategories } from '../src/store/gameStore';
@@ -9,7 +9,6 @@ import { Category, Difficulty } from '../src/types';
 
 export default function SetupScreen() {
   const router = useRouter();
-  const theme = useTheme();
   const params = useLocalSearchParams<{ players: string }>();
   const playerNames = params.players?.split(',') || [];
   const playerCount = playerNames.length;
@@ -50,166 +49,328 @@ export default function SetupScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['bottom']}>
-      <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent}>
-        {/* Imposter Count */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.cardTitle}>
-              🕵️ Anzahl Imposter
-            </Text>
-            <Text variant="bodySmall" style={styles.hint}>
-              Empfohlen für {playerCount} Spieler: {recommendedImposters}
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerEmoji}>⚙️</Text>
+          <Text style={styles.headerTitle}>Spieleinstellungen</Text>
+          <Text style={styles.headerSubtitle}>{playerCount} Spieler dabei</Text>
+        </View>
+
+        <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent}>
+          {/* Imposter Count */}
+          <Surface style={styles.card} elevation={2}>
+            <Text style={styles.cardTitle}>🕵️ Wie viele Imposter?</Text>
+            <Text style={styles.hint}>
+              Empfohlen: {recommendedImposters} {recommendedImposters === 1 ? 'Imposter' : 'Imposter'}
             </Text>
 
             <View style={styles.imposterOptions}>
               {Array.from({ length: maxImposters }, (_, i) => i + 1).map((num) => (
-                <Chip
+                <Pressable
                   key={num}
-                  selected={imposterCount === num}
                   onPress={() => setImposterCount(num)}
-                  style={styles.imposterChip}
-                  showSelectedCheck
+                  style={[
+                    styles.imposterChip,
+                    imposterCount === num && styles.imposterChipSelected,
+                  ]}
                 >
-                  {num} {num === 1 ? 'Imposter' : 'Imposter'}
-                  {num === recommendedImposters ? ' ✓' : ''}
-                </Chip>
+                  <Text style={styles.imposterNumber}>{num}</Text>
+                  <Text style={[
+                    styles.imposterLabel,
+                    imposterCount === num && styles.imposterLabelSelected,
+                  ]}>
+                    {num === 1 ? 'Imposter' : 'Imposter'}
+                  </Text>
+                  {num === recommendedImposters && (
+                    <Text style={styles.recommendedBadge}>⭐</Text>
+                  )}
+                </Pressable>
               ))}
             </View>
-          </Card.Content>
-        </Card>
+          </Surface>
 
-        {/* Category Selection */}
-        <Card style={styles.card}>
-          <Card.Content>
+          {/* Category Selection */}
+          <Surface style={styles.card} elevation={2}>
             <View style={styles.categoryHeader}>
-              <Text variant="titleMedium" style={styles.cardTitle}>
-                📚 Kategorie wählen
-              </Text>
-              <Button mode="text" onPress={selectRandomCategory} compact>
-                🎲 Zufall
-              </Button>
+              <Text style={styles.cardTitle}>📚 Wähle ein Thema!</Text>
+              <Pressable onPress={selectRandomCategory} style={styles.randomButton}>
+                <Text style={styles.randomButtonText}>🎲 Zufall</Text>
+              </Pressable>
             </View>
 
-            <RadioButton.Group
-              onValueChange={(value) => setSelectedCategory(value)}
-              value={selectedCategory}
-            >
-              {/* Custom Categories First */}
-              {customCategories.length > 0 && (
-                <>
-                  <Text variant="labelMedium" style={styles.categoryGroupLabel}>
-                    Eigene Wortlisten
-                  </Text>
+            {/* Custom Categories */}
+            {customCategories.length > 0 && (
+              <>
+                <Text style={styles.categoryGroupLabel}>⭐ Deine Wortlisten</Text>
+                <View style={styles.categoryGrid}>
                   {customCategories.map((cat) => (
-                    <RadioButton.Item
+                    <Pressable
                       key={cat.id}
-                      label={`${cat.icon} ${cat.name} (${cat.words.length} Wörter)`}
-                      value={cat.id}
-                      style={styles.radioItem}
-                    />
+                      onPress={() => setSelectedCategory(cat.id)}
+                      style={[
+                        styles.categoryCard,
+                        selectedCategory === cat.id && styles.categoryCardSelected,
+                      ]}
+                    >
+                      <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                      <Text style={styles.categoryName}>{cat.name}</Text>
+                      <Text style={styles.categoryCount}>{cat.words.length} Wörter</Text>
+                    </Pressable>
                   ))}
-                  <Divider style={styles.divider} />
-                </>
-              )}
+                </View>
+              </>
+            )}
 
-              <Text variant="labelMedium" style={styles.categoryGroupLabel}>
-                Vorgefertigte Kategorien
-              </Text>
+            <Text style={styles.categoryGroupLabel}>🎯 Kategorien</Text>
+            <View style={styles.categoryGrid}>
               {defaultCategories.map((cat) => {
                 const difficulty = getCategoryDifficulty(cat);
                 return (
-                  <RadioButton.Item
+                  <Pressable
                     key={cat.id}
-                    label={`${cat.icon} ${cat.name} ${getDifficultyEmoji(difficulty)}`}
-                    value={cat.id}
-                    style={styles.radioItem}
-                  />
+                    onPress={() => setSelectedCategory(cat.id)}
+                    style={[
+                      styles.categoryCard,
+                      selectedCategory === cat.id && styles.categoryCardSelected,
+                    ]}
+                  >
+                    <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                    <Text style={styles.categoryName}>{cat.name}</Text>
+                    <Text style={styles.categoryDifficulty}>
+                      {getDifficultyEmoji(difficulty)}
+                    </Text>
+                  </Pressable>
                 );
               })}
-            </RadioButton.Group>
-          </Card.Content>
-        </Card>
+            </View>
 
-        <View style={styles.legend}>
-          <Text variant="bodySmall">
-            🟢 Einfach  🟡 Mittel  🔴 Schwer
-          </Text>
+            <View style={styles.legend}>
+              <Text style={styles.legendText}>🟢 Einfach  🟡 Mittel  🔴 Schwer</Text>
+            </View>
+          </Surface>
+        </ScrollView>
+
+        {/* Start Button */}
+        <View style={styles.footer}>
+          <Pressable
+            onPress={handleStartGame}
+            disabled={!selectedCategory}
+            style={({ pressed }) => [
+              styles.startButton,
+              !selectedCategory && styles.startButtonDisabled,
+              pressed && styles.startButtonPressed,
+            ]}
+          >
+            <Text style={[
+              styles.startButtonText,
+              !selectedCategory && styles.startButtonTextDisabled,
+            ]}>
+              🚀 Los geht's!
+            </Text>
+          </Pressable>
+          {!selectedCategory && (
+            <Text style={styles.selectHint}>Wähle erst ein Thema aus!</Text>
+          )}
         </View>
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <Button
-          mode="contained"
-          onPress={handleStartGame}
-          disabled={!selectedCategory}
-          style={styles.startButton}
-          contentStyle={styles.startButtonContent}
-        >
-          🎮 Spiel starten
-        </Button>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#45B7D1',
+  },
+  safeArea: {
+    flex: 1,
   },
   flex: {
     flex: 1,
   },
+  header: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  headerEmoji: {
+    fontSize: 36,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
   scrollContent: {
     padding: 16,
+    paddingBottom: 24,
   },
   card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 16,
   },
   cardTitle: {
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 4,
   },
   hint: {
-    opacity: 0.6,
-    marginBottom: 12,
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 14,
   },
   imposterOptions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   imposterChip: {
-    marginRight: 4,
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  imposterChipSelected: {
+    backgroundColor: '#FFE66D',
+    borderColor: '#FFC107',
+  },
+  imposterNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#333',
+  },
+  imposterLabel: {
+    fontSize: 11,
+    color: '#666',
+    fontWeight: '600',
+  },
+  imposterLabelSelected: {
+    color: '#333',
+  },
+  recommendedBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 6,
+    fontSize: 14,
   },
   categoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
+  },
+  randomButton: {
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  randomButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2E7D32',
   },
   categoryGroupLabel: {
-    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 12,
+    marginBottom: 10,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  categoryCard: {
+    width: '30%',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  categoryCardSelected: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#2196F3',
+  },
+  categoryIcon: {
+    fontSize: 28,
     marginBottom: 4,
-    opacity: 0.6,
   },
-  radioItem: {
-    paddingVertical: 4,
+  categoryName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
   },
-  divider: {
-    marginVertical: 12,
+  categoryCount: {
+    fontSize: 9,
+    color: '#666',
+    marginTop: 2,
+  },
+  categoryDifficulty: {
+    fontSize: 10,
+    marginTop: 2,
   },
   legend: {
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EEE',
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#888',
   },
   footer: {
     padding: 16,
     paddingBottom: 8,
   },
   startButton: {
-    borderRadius: 12,
+    backgroundColor: '#FFE66D',
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  startButtonContent: {
-    paddingVertical: 6,
+  startButtonDisabled: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  startButtonPressed: {
+    transform: [{ scale: 0.98 }],
+  },
+  startButtonText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#333',
+  },
+  startButtonTextDisabled: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+  selectHint: {
+    textAlign: 'center',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 8,
+    fontSize: 14,
   },
 });
