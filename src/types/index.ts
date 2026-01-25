@@ -28,6 +28,7 @@ export interface GameSession {
   selectedWord: string;
   imposterCount: number;
   currentPlayerIndex: number;
+  startingPlayerIndex: number;
   phase: 'setup' | 'reveal' | 'discussion' | 'result';
   createdAt: number;
 }

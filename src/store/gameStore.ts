@@ -61,6 +61,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Shuffle player order for reveal
     const shuffledPlayers = shuffleArray(players);
 
+    // Pick random starting player for discussion
+    const startingPlayerIndex = Math.floor(Math.random() * shuffledPlayers.length);
+
     const gameSession: GameSession = {
       id: generateId(),
       players: shuffledPlayers,
@@ -68,6 +71,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       selectedWord,
       imposterCount,
       currentPlayerIndex: 0,
+      startingPlayerIndex,
       phase: 'reveal',
       createdAt: Date.now(),
     };

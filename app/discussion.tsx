@@ -31,6 +31,8 @@ export default function DiscussionScreen() {
     router.replace('/result');
   };
 
+  const startingPlayer = currentGame.players[currentGame.startingPlayerIndex];
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -39,6 +41,14 @@ export default function DiscussionScreen() {
           <Text style={styles.headerEmoji}>🗣️</Text>
           <Text style={styles.headerTitle}>Diskussion!</Text>
           <Text style={styles.headerSubtitle}>Wer ist der Imposter?</Text>
+        </View>
+
+        {/* Starting Player Callout */}
+        <View style={styles.startingPlayerBanner}>
+          <PlayerAvatar playerIndex={startingPlayer.avatarIndex} size={36} />
+          <Text style={styles.startingPlayerText}>
+            <Text style={styles.startingPlayerName}>{startingPlayer.name}</Text> beginnt!
+          </Text>
         </View>
 
         <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent}>
@@ -152,6 +162,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'rgba(255,255,255,0.9)',
     marginTop: 2,
+  },
+  startingPlayerBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  startingPlayerText: {
+    fontSize: 18,
+    color: '#333',
+  },
+  startingPlayerName: {
+    fontWeight: '800',
+    color: '#E67E22',
   },
   scrollContent: {
     padding: 16,
