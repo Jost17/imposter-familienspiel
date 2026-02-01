@@ -104,10 +104,9 @@ export default function ResultScreen() {
             </View>
             <View style={styles.imposterNames}>
               {imposters.map((player) => {
-                const playerIndex = currentGame.players.findIndex(p => p.id === player.id);
                 return (
                   <View key={player.id} style={styles.imposterNameBadge}>
-                    <PlayerAvatar playerIndex={playerIndex} size={32} />
+                    <PlayerAvatar playerIndex={player.avatarIndex} size={32} />
                     <Text style={styles.imposterName}>{player.name}</Text>
                   </View>
                 );
@@ -131,10 +130,9 @@ export default function ResultScreen() {
             <Text style={styles.innocentsTitle}>✅ Unschuldig:</Text>
             <View style={styles.innocentsGrid}>
               {innocents.map((player) => {
-                const playerIndex = currentGame.players.findIndex(p => p.id === player.id);
                 return (
                   <View key={player.id} style={styles.innocentChip}>
-                    <PlayerAvatar playerIndex={playerIndex} size={24} />
+                    <PlayerAvatar playerIndex={player.avatarIndex} size={24} />
                     <Text style={styles.innocentName}>{player.name}</Text>
                   </View>
                 );

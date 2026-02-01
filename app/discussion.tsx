@@ -73,7 +73,7 @@ export default function DiscussionScreen() {
           <View style={styles.playersGrid}>
             {currentGame.players.map((player, index) => (
               <Surface key={player.id} style={styles.playerCard} elevation={2}>
-                <PlayerAvatar playerIndex={index} size={48} />
+                <PlayerAvatar playerIndex={player.avatarIndex} size={48} />
                 <Text style={styles.playerName}>{player.name}</Text>
                 <View style={styles.playerNumber}>
                   <Text style={styles.playerNumberText}>{index + 1}</Text>
